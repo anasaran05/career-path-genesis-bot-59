@@ -1,6 +1,6 @@
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
@@ -24,7 +24,7 @@ const Login = () => {
                 appearance={{ theme: ThemeSupa }}
                 providers={['google', 'github']}
                 view="sign_in"
-                redirectTo="/dashboard"
+                redirectTo={`${window.location.origin}/dashboard`}
             />
         </div>
     </div>
