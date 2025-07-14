@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -79,11 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, userData: any) => {
+  const signUp = async (email: string, password: string, userData: any = {}) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -98,6 +98,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: error.message,
           variant: "destructive",
         });
+        return { error };
+      }
+
+      // If user was created successfully, add initial credits
+      if (data.user && !error) {
+        try {
+          const { error: creditsError } = await supabase
+            .from('user_credits')
+            .insert([
+              {
+                user_id: data.user.id,
+                total_credits: 30,
+                used_credits: 0
+              }
+            ]);
+          
+          if (creditsError) {
+            console.error('Error creating user credits:', creditsError);
+          }
+        } catch (creditsError) {
+          console.error('Error inserting credits:', creditsError);
+        }
       }
       
       return { error };
