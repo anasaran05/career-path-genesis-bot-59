@@ -4,7 +4,9 @@ import { useParams, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Brain, TrendingUp, Users, Briefcase, Star, CheckCircle, Loader2 } from "lucide-react";
+import { 
+  ArrowLeft, Brain, TrendingUp, Users, Briefcase, Star, CheckCircle, Loader2 
+} from "lucide-react";
 import { supabase } from '@/lib/supabase';
 
 const Analysis = () => {
@@ -14,17 +16,18 @@ const Analysis = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      setError("No user ID provided.");
-      return;
-    }
-
     const runAndFetchAnalysis = async () => {
+      if (!userId) {
+        setLoading(false);
+        setError("No user ID provided.");
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
 
+        // 1. Trigger the analysis process
         const res = await fetch('/api/analyzeProfile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -32,11 +35,11 @@ const Analysis = () => {
         });
 
         if (!res.ok) {
-          throw new Error('Failed to start analysis.');
+          throw new Error('Failed to start analysis. Please try again later.');
         }
+        await res.json(); // Wait for the analysis to be confirmed as started
 
-        await res.json();
-
+        // 2. Fetch the results from Supabase
         const { data, error: dbError } = await supabase
           .from('analysis_results')
           .select('*')
@@ -49,8 +52,8 @@ const Analysis = () => {
         
         setAnalysis(data);
       } catch (e: any) {
-        console.error(e);
-        setError(e.message || "An unexpected error occurred.");
+        console.error("Error fetching analysis:", e);
+        setError(e.message || "An unexpected error occurred while fetching your analysis.");
       } finally {
         setLoading(false);
       }
@@ -108,13 +111,11 @@ const Analysis = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Greeting */}
           <div className="text-center mb-8 animate-fade-in">
             <h1 className="text-4xl font-bold text-navy-800 mb-2">Hi {userName}! 👋</h1>
             <p className="text-xl text-slate-600">Here's your personalized career analysis for <span className="font-semibold text-navy-700">{analysis.industry_name}</span></p>
           </div>
 
-          {/* Recommended Careers */}
           <div className="mb-12">
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-10 h-10 bg-gradient-to-r from-navy-500 to-autumn-500 rounded-lg flex items-center justify-center">
@@ -138,7 +139,6 @@ const Analysis = () => {
                   <CardContent className="space-y-4">
                     <p className="text-slate-600 text-sm leading-relaxed">{career.description}</p>
                     
-                    {/* Match Score Bar */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-600">Match Score</span>
@@ -147,7 +147,6 @@ const Analysis = () => {
                       <Progress value={career.match_score} className="h-2" />
                     </div>
 
-                    {/* Details Grid */}
                     <div className="grid grid-cols-2 gap-4 pt-2">
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Salary</p>
@@ -156,8 +155,8 @@ const Analysis = () => {
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Growth</p>
                         <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
-                          career.growth === 'High' ? 'bg-green-100 text-green-700' :
-                          career.growth === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                          career.growth_prospects === 'High' ? 'bg-green-100 text-green-700' :
+                          career.growth_prospects === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
                           'bg-slate-100 text-slate-600'
                         }`}>
                           {career.growth_prospects}
@@ -165,7 +164,6 @@ const Analysis = () => {
                       </div>
                     </div>
 
-                    {/* Key Skills */}
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Key Skills to Upskill</p>
                       <div className="flex flex-wrap gap-2">
@@ -182,7 +180,6 @@ const Analysis = () => {
             </div>
           </div>
 
-          {/* Priority Skills */}
           <Card className="bg-gradient-to-r from-navy-50 to-blue-50 border border-navy-200 shadow-lg animate-fade-in">
             <CardHeader>
               <div className="flex items-center space-x-3">
@@ -205,7 +202,6 @@ const Analysis = () => {
             </CardContent>
           </Card>
 
-          {/* Next Steps */}
           <div className="text-center mt-12">
             <Link to="/job-scan">
               <Button className="bg-gradient-to-r from-navy-600 to-autumn-500 hover:from-navy-700 hover:to-autumn-600 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
