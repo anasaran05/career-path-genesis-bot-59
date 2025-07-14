@@ -44,40 +44,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Get initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('Initial session:', session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
-        setUserProfile(profile);
-      }
-      
-      setLoading(false);
-    }).catch(error => {
-      console.error('Error getting initial session:', error);
-      setLoading(false);
-    });
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session);
+      if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
           setUserProfile(profile);
-        } else {
-          setUserProfile(null);
+        }
+        
+        setLoading(false);
+      }
+    }).catch(error => {
+      console.error('Error getting initial session:', error);
+      if (mounted) {
+        setLoading(false);
+      }
+    });
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            const profile = await fetchUserProfile(session.user.id);
+            setUserProfile(profile);
+          } else {
+            setUserProfile(null);
+          }
         }
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, userData: any = {}) => {

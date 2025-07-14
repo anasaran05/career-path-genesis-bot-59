@@ -5,13 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowDown, User, Search, FileText, Sparkles, Brain, Target } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthModal from '@/components/AuthModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const handleGetStarted = () => {
-    setIsAuthModalOpen(true);
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      setIsAuthModalOpen(true);
+    }
   };
 
   return (
@@ -33,12 +39,33 @@ const Index = () => {
             <a href="#process" className="text-slate-600 hover:text-navy-600 transition-colors">How it Works</a>
             <a href="#contact" className="text-slate-600 hover:text-navy-600 transition-colors">Contact</a>
             
-            <Button onClick={() => setIsAuthModalOpen(true)} variant="ghost" className="text-navy-700 hover:bg-navy-50 rounded-xl">
-              Login
-            </Button>
-            <Button onClick={handleGetStarted} className="bg-gradient-to-r from-navy-600 to-autumn-500 hover:from-navy-700 hover:to-autumn-600 text-white rounded-xl">
-              Get Started
-            </Button>
+            {user ? (
+              <>
+                <Button 
+                  onClick={() => navigate('/dashboard')} 
+                  variant="ghost" 
+                  className="text-navy-700 hover:bg-navy-50 rounded-xl"
+                >
+                  Dashboard
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  onClick={() => setIsAuthModalOpen(true)} 
+                  variant="ghost" 
+                  className="text-navy-700 hover:bg-navy-50 rounded-xl"
+                >
+                  Login
+                </Button>
+                <Button 
+                  onClick={handleGetStarted} 
+                  className="bg-gradient-to-r from-navy-600 to-autumn-500 hover:from-navy-700 hover:to-autumn-600 text-white rounded-xl"
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -249,10 +276,7 @@ const Index = () => {
         </div>
       </footer>
 
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
-      />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

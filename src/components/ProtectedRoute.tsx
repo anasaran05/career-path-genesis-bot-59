@@ -9,7 +9,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  // Only show loading state if we're actually checking auth
+  if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
@@ -25,6 +26,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
+  // If we have a user or we're still loading but have a user, render the protected content
   return <>{children}</>;
 };
 
