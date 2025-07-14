@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
@@ -20,10 +21,11 @@ const Dashboard = () => {
         const fetchData = async () => {
             if (!user) {
                 setLoading(false);
-                navigate('/login');
+                navigate('/auth');
                 return;
             }
 
+            console.log('Fetching dashboard data for user:', user.id);
             setLoading(true);
 
             try {
@@ -33,6 +35,8 @@ const Dashboard = () => {
                     .select('total_credits, used_credits')
                     .eq('user_id', user.id)
                     .single();
+                
+                console.log('Credits query result:', { creditsData, creditsError });
                 
                 if (creditsError) {
                     console.error('Error fetching credits:', creditsError);
@@ -52,6 +56,8 @@ const Dashboard = () => {
                     .select('*')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false });
+
+                console.log('Documents query result:', { docs, docsError });
 
                 if (docsError) {
                     console.error('Error fetching documents:', docsError);
@@ -93,7 +99,7 @@ const Dashboard = () => {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
                 <p className="mb-4 text-navy-700">Please log in to see your dashboard.</p>
-                <Link to="/login">
+                <Link to="/auth">
                     <Button>Log In</Button>
                 </Link>
             </div>
@@ -220,4 +226,4 @@ const Dashboard = () => {
     );
 };
 
-export default Dashboard; 
+export default Dashboard;
