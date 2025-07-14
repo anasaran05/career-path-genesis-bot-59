@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isResetMode, setIsResetMode] = useState(false);
@@ -35,61 +35,78 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [signupName, setSignupName] = useState('');
   const [resetEmail, setResetEmail] = useState('');
 
+  // Close modal if user becomes authenticated
+  useEffect(() => {
+    if (user) {
+      onClose();
+      navigate('/dashboard');
+    }
+  }, [user, onClose, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error } = await signIn(loginEmail, loginPassword);
-    
-    if (!error) {
-      onClose();
-      navigate('/dashboard');
+    try {
+      const { error } = await signIn(loginEmail, loginPassword);
+      if (!error) {
+        // Auth state change will handle navigation
+        setLoginEmail('');
+        setLoginPassword('');
+      }
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error } = await signUp(signupEmail, signupPassword, {
-      full_name: signupName
-    });
-    
-    if (!error) {
-      onClose();
-      navigate('/dashboard');
+    try {
+      const { error } = await signUp(signupEmail, signupPassword, {
+        full_name: signupName
+      });
+      
+      if (!error) {
+        // Clear form
+        setSignupEmail('');
+        setSignupPassword('');
+        setSignupName('');
+      }
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: 'https://rainbow-chebakia-80ba28.netlify.app/dashboard'
-    });
-    
-    if (error) {
-      console.error('Reset password error:', error);
-      toast({
-        title: "Reset Password Error",
-        description: error.message,
-        variant: "destructive",
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: window.location.origin + '/dashboard'
       });
-    } else {
-      toast({
-        title: "Password Reset Email Sent",
-        description: "Check your email for the password reset link.",
-        variant: "default",
-      });
-      setIsResetMode(false);
+      
+      if (error) {
+        console.error('Reset password error:', error);
+        toast({
+          title: "Reset Password Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Password Reset Email Sent",
+          description: "Check your email for the password reset link.",
+          variant: "default",
+        });
+        setIsResetMode(false);
+        setResetEmail('');
+      }
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (

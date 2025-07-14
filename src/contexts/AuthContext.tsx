@@ -46,26 +46,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Initial session:', session);
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id);
-          setUserProfile(profile);
+        if (error) throw error;
+
+        if (mounted) {
+          console.log('Initial session:', session);
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            const profile = await fetchUserProfile(session.user.id);
+            if (mounted) {
+              setUserProfile(profile);
+            }
+          }
         }
-        
-        setLoading(false);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    }).catch(error => {
-      console.error('Error getting initial session:', error);
-      if (mounted) {
-        setLoading(false);
-      }
-    });
+    };
+
+    initializeAuth();
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -77,7 +86,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           if (session?.user) {
             const profile = await fetchUserProfile(session.user.id);
-            setUserProfile(profile);
+            if (mounted) {
+              setUserProfile(profile);
+            }
           } else {
             setUserProfile(null);
           }
@@ -94,15 +105,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, userData: any = {}) => {
     try {
       console.log('Attempting signup for:', email);
-      // Use the production URL for email confirmation
-      const redirectUrl = 'https://rainbow-chebakia-80ba28.netlify.app/dashboard';
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
-          data: userData
+          data: userData,
+          emailRedirectTo: window.location.origin + '/dashboard'
         }
       });
       
@@ -144,11 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast({
         title: "Success!",
-        description: "Account created successfully. You can now sign in.",
+        description: "Account created successfully. Please check your email to confirm your account.",
         variant: "default",
       });
       
-      return { error };
+      return { error: null };
     } catch (error: any) {
       console.error('Signup catch error:', error);
       toast({
@@ -218,18 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
   };
-
-  // If auth is loading, show loading screen
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-600 mx-auto mb-4"></div>
-          <p className="text-navy-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider value={{
