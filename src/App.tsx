@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Intake from "./pages/Intake";
 import Analysis from "./pages/Analysis";
@@ -29,17 +30,57 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Public routes */}
               <Route path="/" element={<Index />} />
-              <Route path="/intake" element={<Intake />} />
-              <Route path="/analysis/:userId" element={<Analysis />} />
-              <Route path="/job-scan" element={<JobScan />} />
-              <Route path="/job-application/:jobId" element={<JobApplication />} />
-              <Route path="/job-details/:jobId" element={<JobDetails />} />
-              <Route path="/advisory-report" element={<AdvisoryReport />} />
-              <Route path="/courses" element={<CoursesPage />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              
+              {/* Protected routes */}
+              <Route path="/intake" element={
+                <ProtectedRoute>
+                  <Intake />
+                </ProtectedRoute>
+              } />
+              <Route path="/analysis/:userId" element={
+                <ProtectedRoute>
+                  <Analysis />
+                </ProtectedRoute>
+              } />
+              <Route path="/job-scan" element={
+                <ProtectedRoute>
+                  <JobScan />
+                </ProtectedRoute>
+              } />
+              <Route path="/job-application/:jobId" element={
+                <ProtectedRoute>
+                  <JobApplication />
+                </ProtectedRoute>
+              } />
+              <Route path="/job-details/:jobId" element={
+                <ProtectedRoute>
+                  <JobDetails />
+                </ProtectedRoute>
+              } />
+              <Route path="/advisory-report" element={
+                <ProtectedRoute>
+                  <AdvisoryReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/courses" element={
+                <ProtectedRoute>
+                  <CoursesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/recruiter-dashboard" element={
+                <ProtectedRoute>
+                  <RecruiterDashboard />
+                </ProtectedRoute>
+              } />
+              
+              {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
