@@ -8,9 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, User, BookOpen, Award, Target, Brain, ChevronRight, Plus, Trash2, ExternalLink, Check, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Intake = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -76,12 +79,46 @@ const Intake = () => {
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      navigate('/analysis', { state: { studentData: formData } });
+      if (!user) {
+        console.error("User not logged in");
+        // Handle not logged in case, maybe redirect to login
+        return;
+      }
+      const { data, error } = await supabase
+       .from('user_profiles')
+       .upsert({
+         id: user.id,
+         email: formData.email,
+         name: formData.fullName,
+         education: formData.education,
+         skills: [...formData.technicalSkills, ...formData.softSkills].filter(Boolean),
+         experience: formData.experience,
+         preferred_industries: [formData.preferredIndustry].filter(Boolean),
+         preferred_locations: formData.jobLocations.split(',').map(s => s.trim()).filter(Boolean),
+         certifications: formData.certifications,
+         phone: formData.phone,
+         location: formData.location,
+         projects: formData.projects,
+         career_goals: formData.careerGoals,
+         salary_expectation: formData.salaryExpectation,
+         work_style: formData.workStyle
+       })
+       .select('id')
+       .single()
+
+     if (error) {
+       console.error("Error upserting profile:", error)
+       throw error
+     }
+     
+     if (data) {
+        navigate(`/analysis/${data.id}`)
+     }
     }
   };
 

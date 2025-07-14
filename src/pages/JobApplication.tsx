@@ -8,15 +8,20 @@ import { ArrowLeft, FileText, User, Loader2, CheckCircle, Download, Send, Brain,
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import PremiumModal from "@/components/PremiumModal";
 import ManualApplicationModal from "@/components/ManualApplicationModal";
+import { useAuth } from '@/contexts/AuthContext';
 
 const JobApplication = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { jobId } = useParams();
+  const { jobId } = useParams<{ jobId: string }>();
+  const { user } = useAuth();
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationComplete, setGenerationComplete] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState('Analyzing job requirements...');
+  const [resumeUrl, setResumeUrl] = useState('');
+  const [coverLetterUrl, setCoverLetterUrl] = useState('');
+  const [remainingCredits, setRemainingCredits] = useState<number | null>(null);
+
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
 
@@ -42,61 +47,48 @@ const JobApplication = () => {
     'Optimizing for ATS systems...'
   ];
 
-  const handleGenerateDocuments = () => {
+  const handleGenerateDocuments = async () => {
+    if (!user || !jobId) return;
     setIsGenerating(true);
-    let step = 0;
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + 4;
-        if (newProgress >= 100) {
-          setIsGenerating(false);
-          setGenerationComplete(true);
-          clearInterval(interval);
-          return 100;
-        }
-        if (newProgress > (step + 1) * 20) {
-          step++;
-          if (step < generationSteps.length) {
-            setCurrentStep(generationSteps[step]);
-          }
-        }
-        return newProgress;
+    
+    try {
+      const res = await fetch('/api/generateDocuments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, jobId })
       });
-    }, 150);
+
+      if (!res.ok) {
+        // Here you might want to check for a specific status code
+        // for "not enough credits" and show the premium modal.
+        if (res.status === 402) { // Payment Required
+          setShowPremiumModal(true);
+        }
+        throw new Error('Failed to generate documents');
+      }
+
+      const { resumeUrl, coverLetterUrl, remainingCredits } = await res.json();
+      setResumeUrl(resumeUrl);
+      setCoverLetterUrl(coverLetterUrl);
+      setRemainingCredits(remainingCredits);
+      setGenerationComplete(true);
+
+    } catch (error) {
+      console.error(error);
+      // Optionally show a toast or error message
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleDownloadResume = () => {
-    const resumeContent = `HEALTHCARE PROFESSIONAL RESUME
-Generated for: ${job.title} at ${job.company}
-
-[Professional resume content would be generated here based on the job requirements and user profile]`;
-    
-    const blob = new Blob([resumeContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Resume_${job.title.replace(/\s+/g, '_')}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (!resumeUrl) return;
+    window.open(resumeUrl, '_blank');
   };
 
   const handleDownloadCoverLetter = () => {
-    const coverLetterContent = `COVER LETTER
-For: ${job.title} at ${job.company}
-
-[Personalized cover letter content would be generated here]`;
-    
-    const blob = new Blob([coverLetterContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `CoverLetter_${job.title.replace(/\s+/g, '_')}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (!coverLetterUrl) return;
+    window.open(coverLetterUrl, '_blank');
   };
 
   if (isGenerating) {
@@ -113,11 +105,8 @@ For: ${job.title} at ${job.company}
             </div>
             
             <div className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-navy-700">{currentStep}</span>
-                <span className="text-slate-500">{progress}%</span>
-              </div>
-              <Progress value={progress} className="h-2" />
+              <p className="text-sm text-navy-700">Just a moment...</p>
+              <Progress value={undefined} className="h-2" />
             </div>
           </CardContent>
         </Card>
@@ -249,115 +238,46 @@ For: ${job.title} at ${job.company}
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Documents Generated Successfully
               </div>
+              <h1 className="text-4xl font-bold text-navy-800 mb-4">Your Application is Ready!</h1>
+              {remainingCredits !== null && (
+                <p className="text-xl text-slate-600 mb-8">
+                  You have <span className="font-bold text-autumn-600">{remainingCredits}</span> generation credits remaining.
+                </p>
+              )}
               
-              <h1 className="text-4xl font-bold text-navy-800 mb-4">
-                Your Healthcare Application is Ready!
-              </h1>
-              <p className="text-xl text-slate-600 mb-8">
-                We've created a customized resume and cover letter for this position
-              </p>
-
-              {/* Generated Documents */}
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
-                <Card className="bg-white border-slate-200 shadow-lg rounded-xl">
-                  <CardContent className="p-6">
-                    <div className="text-center mb-4">
-                      <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                        <FileText className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <h3 className="text-lg font-bold text-navy-800">Custom Resume</h3>
-                      <p className="text-slate-600 text-sm">Tailored for {job.title}</p>
-                    </div>
-                    
-                    <div className="space-y-2 text-left text-sm text-slate-600 mb-4">
-                      <div>• Highlighted relevant healthcare experience</div>
-                      <div>• Emphasized clinical skills and certifications</div>
-                      <div>• Optimized for healthcare industry ATS</div>
-                      <div>• Matched keywords from job description</div>
-                    </div>
-                    
-                    <Button 
-                      onClick={handleDownloadResume}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download Resume
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white border-slate-200 shadow-lg rounded-xl">
-                  <CardContent className="p-6">
-                    <div className="text-center mb-4">
-                      <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                        <User className="w-8 h-8 text-purple-600" />
-                      </div>
-                      <h3 className="text-lg font-bold text-navy-800">Cover Letter</h3>
-                      <p className="text-slate-600 text-sm">Personalized for {job.company}</p>
-                    </div>
-                    
-                    <div className="space-y-2 text-left text-sm text-slate-600 mb-4">
-                      <div>• Addressed to hiring manager</div>
-                      <div>• Connected your background to role requirements</div>
-                      <div>• Expressed enthusiasm for the position</div>
-                      <div>• Professional healthcare industry tone</div>
-                    </div>
-                    
-                    <Button 
-                      onClick={handleDownloadCoverLetter}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download Cover Letter
-                    </Button>
-                  </CardContent>
-                </Card>
+              <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
+                <Button size="lg" className="w-full" onClick={handleDownloadResume} disabled={!resumeUrl}>
+                  <Download className="w-5 h-5 mr-2" />
+                  Download Resume
+                </Button>
+                <Button size="lg" className="w-full" onClick={handleDownloadCoverLetter} disabled={!coverLetterUrl}>
+                  <Download className="w-5 h-5 mr-2" />
+                  Download Cover Letter
+                </Button>
               </div>
 
-              {/* Application Actions */}
-              <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200 shadow-lg mb-8 rounded-xl">
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold mb-4 text-navy-800">Ready to Apply?</h3>
-                  <p className="mb-6 text-slate-600 text-lg">
-                    Your documents are optimized and ready for submission. Choose how you'd like to proceed.
-                  </p>
-                  
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button 
-                      size="lg" 
-                      className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                      onClick={() => setShowManualModal(true)}
-                    >
-                      <Send className="w-5 h-5 mr-2" />
-                      Apply Manually
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="lg" 
-                      className="border-2 border-autumn-300 text-autumn-700 hover:bg-autumn-50 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-300"
-                      onClick={() => setShowPremiumModal(true)}
-                    >
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Auto-Apply (Premium)
-                    </Button>
-                  </div>
-                  
-                  <p className="text-sm mt-4 text-slate-500">
-                    Auto-Apply feature uses our advanced 60:40 system for guaranteed quality applications
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="space-y-4">
+                <p className="text-slate-600">Next, you can either submit this application through the company's portal or explore more jobs.</p>
+                <div className="flex justify-center space-x-4">
+                  <Button 
+                    variant="outline"
+                    className="border-2 border-navy-600 text-navy-600"
+                    onClick={() => job.link && window.open(job.link, '_blank')}
+                    disabled={!job.link}
+                  >
+                    Apply on Company Site
+                    <Send className="w-4 h-4 ml-2" />
+                  </Button>
+                  <Button onClick={() => navigate('/job-scan')}>
+                    Find More Jobs
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Modals */}
-      <PremiumModal 
-        open={showPremiumModal} 
-        onClose={() => setShowPremiumModal(false)} 
-      />
+      <PremiumModal open={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
       <ManualApplicationModal 
         open={showManualModal} 
         onClose={() => setShowManualModal(false)} 

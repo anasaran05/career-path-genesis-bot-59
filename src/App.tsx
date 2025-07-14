@@ -15,6 +15,7 @@ import AdvisoryReport from "./pages/AdvisoryReport";
 import CoursesPage from "./pages/CoursesPage";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -28,12 +29,13 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/intake" element={<Intake />} />
-            <Route path="/analysis" element={<Analysis />} />
+            <Route path="/analysis/:userId" element={<Analysis />} />
             <Route path="/job-scan" element={<JobScan />} />
             <Route path="/job-application/:jobId" element={<JobApplication />} />
             <Route path="/job-details/:jobId" element={<JobDetails />} />
             <Route path="/advisory-report" element={<AdvisoryReport />} />
             <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

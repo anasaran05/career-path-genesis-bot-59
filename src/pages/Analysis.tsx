@@ -1,21 +1,80 @@
 
-import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Brain, TrendingUp, Users, Briefcase, Star, CheckCircle } from "lucide-react";
+import { ArrowLeft, Brain, TrendingUp, Users, Briefcase, Star, CheckCircle, Loader2 } from "lucide-react";
+import { supabase } from '@/lib/supabase';
 
 const Analysis = () => {
-  const location = useLocation();
-  const studentData = location.state?.studentData;
+  const { userId } = useParams<{ userId: string }>();
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!studentData) {
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      setError("No user ID provided.");
+      return;
+    }
+
+    const runAndFetchAnalysis = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch('/api/analyzeProfile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to start analysis.');
+        }
+
+        await res.json();
+
+        const { data, error: dbError } = await supabase
+          .from('analysis_results')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (dbError) {
+          throw dbError;
+        }
+        
+        setAnalysis(data);
+      } catch (e: any) {
+        console.error(e);
+        setError(e.message || "An unexpected error occurred.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    runAndFetchAnalysis();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col items-center justify-center">
+        <Loader2 className="w-12 h-12 text-navy-600 animate-spin mb-4" />
+        <p className="text-navy-700 font-medium text-lg">Zane AI is analyzing your profile...</p>
+        <p className="text-slate-500">This may take a moment.</p>
+      </div>
+    );
+  }
+
+  if (error || !analysis) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <Card className="max-w-md mx-auto">
           <CardContent className="p-8 text-center">
-            <p className="text-slate-600 mb-4">No analysis data found. Please complete the intake form first.</p>
+            <p className="text-slate-600 mb-4">{error || "No analysis data found. Please complete the intake form first."}</p>
             <Link to="/intake">
               <Button>Go to Intake Form</Button>
             </Link>
@@ -25,8 +84,7 @@ const Analysis = () => {
     );
   }
 
-  const industryData = getIndustryData(studentData.preferredIndustry);
-  const userName = studentData.fullName?.split(' ')[0] || 'there';
+  const userName = analysis.user_name?.split(' ')[0] || 'there';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -53,7 +111,7 @@ const Analysis = () => {
           {/* Greeting */}
           <div className="text-center mb-8 animate-fade-in">
             <h1 className="text-4xl font-bold text-navy-800 mb-2">Hi {userName}! 👋</h1>
-            <p className="text-xl text-slate-600">Here's your personalized career analysis for <span className="font-semibold text-navy-700">{industryData.name}</span></p>
+            <p className="text-xl text-slate-600">Here's your personalized career analysis for <span className="font-semibold text-navy-700">{analysis.industry_name}</span></p>
           </div>
 
           {/* Recommended Careers */}
@@ -66,14 +124,14 @@ const Analysis = () => {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-              {industryData.careers.map((career, index) => (
+              {analysis.recommended_careers?.map((career: any, index: number) => (
                 <Card key={index} className="bg-white border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 animate-scale-in">
                   <CardHeader className="pb-4">
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg font-bold text-navy-800">{career.title}</CardTitle>
                       <div className="flex items-center space-x-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-sm font-medium">
                         <Star className="w-3 h-3" />
-                        <span>{career.matchScore}%</span>
+                        <span>{career.match_score}%</span>
                       </div>
                     </div>
                   </CardHeader>
@@ -84,16 +142,16 @@ const Analysis = () => {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-600">Match Score</span>
-                        <span className="font-medium text-navy-700">{career.matchScore}%</span>
+                        <span className="font-medium text-navy-700">{career.match_score}%</span>
                       </div>
-                      <Progress value={career.matchScore} className="h-2" />
+                      <Progress value={career.match_score} className="h-2" />
                     </div>
 
                     {/* Details Grid */}
                     <div className="grid grid-cols-2 gap-4 pt-2">
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Salary</p>
-                        <p className="text-sm font-semibold text-navy-700">₹{career.salary}</p>
+                        <p className="text-sm font-semibold text-navy-700">{career.salary_range}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Growth</p>
@@ -102,7 +160,7 @@ const Analysis = () => {
                           career.growth === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
                           'bg-slate-100 text-slate-600'
                         }`}>
-                          {career.growth}
+                          {career.growth_prospects}
                         </span>
                       </div>
                     </div>
@@ -111,7 +169,7 @@ const Analysis = () => {
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Key Skills to Upskill</p>
                       <div className="flex flex-wrap gap-2">
-                        {career.skills.map((skill, skillIndex) => (
+                        {career.required_skills?.map((skill: string, skillIndex: number) => (
                           <span key={skillIndex} className="bg-navy-100 text-navy-700 px-2 py-1 rounded-md text-xs font-medium">
                             {skill}
                           </span>
@@ -135,9 +193,9 @@ const Analysis = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-600 mb-6">High-value skills essential for success in {industryData.name}</p>
+              <p className="text-slate-600 mb-6">High-value skills essential for success in {analysis.industry_name}</p>
               <div className="grid md:grid-cols-3 gap-4">
-                {industryData.prioritySkills.map((skill, index) => (
+                {analysis.priority_skills?.map((skill: string, index: number) => (
                   <div key={index} className="flex items-center space-x-3 bg-white rounded-lg p-4 shadow-sm border border-slate-200">
                     <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
                     <span className="text-navy-700 font-medium">{skill}</span>
@@ -160,242 +218,6 @@ const Analysis = () => {
       </div>
     </div>
   );
-};
-
-// Industry data mapping
-const getIndustryData = (industryKey: string) => {
-  const industryMap: Record<string, any> = {
-    'clinical-trials-research': {
-      name: 'Clinical Trials & Research',
-      careers: [
-        {
-          title: 'Clinical Research Associate (CRA)',
-          description: 'Oversees clinical trials to ensure compliance with protocols and GCP guidelines.',
-          salary: '4.5–8 LPA',
-          growth: 'High',
-          skills: ['GCP', 'protocol writing', 'site monitoring', 'ICH guidelines'],
-          matchScore: 85
-        },
-        {
-          title: 'Clinical Trial Assistant (CTA)',
-          description: 'Supports study management, document handling, and trial logistics.',
-          salary: '3–5 LPA',
-          growth: 'Medium',
-          skills: ['TMF management', 'MS Excel', 'trial master file', 'documentation'],
-          matchScore: 78
-        },
-        {
-          title: 'Site Coordinator (CRC)',
-          description: 'Manages patient enrollment and study execution at clinical trial sites.',
-          salary: '2.5–4.5 LPA',
-          growth: 'Medium',
-          skills: ['informed consent', 'patient interaction', 'GCP', 'site SOPs'],
-          matchScore: 72
-        },
-        {
-          title: 'Project Manager – Clinical Trials',
-          description: 'Leads entire clinical projects from planning to close-out.',
-          salary: '10–20 LPA',
-          growth: 'High',
-          skills: ['budgeting', 'timelines', 'team leadership', 'risk mitigation'],
-          matchScore: 68
-        }
-      ],
-      prioritySkills: ['GCP', 'Protocol Writing', 'Clinical Trial Lifecycle', 'Ethics Committee Handling', 'ICH-GCP', 'Project Planning']
-    },
-    'drug-safety-monitoring': {
-      name: 'Drug Safety Monitoring',
-      careers: [
-        {
-          title: 'Pharmacovigilance Associate',
-          description: 'Handles adverse event collection, processing, and reporting.',
-          salary: '4–7 LPA',
-          growth: 'High',
-          skills: ['MedDRA', 'case processing', 'WHO-UMC causality', 'safety databases'],
-          matchScore: 88
-        },
-        {
-          title: 'Signal Detection Analyst',
-          description: 'Monitors safety data trends and detects risk signals.',
-          salary: '6–10 LPA',
-          growth: 'High',
-          skills: ['data mining', 'disproportionality analysis', 'epidemiology'],
-          matchScore: 77
-        },
-        {
-          title: 'Aggregate Report Writer',
-          description: 'Prepares PSURs, DSURs, and other safety reports.',
-          salary: '6–12 LPA',
-          growth: 'Medium',
-          skills: ['medical writing', 'regulatory timelines', 'ICH-E2E'],
-          matchScore: 75
-        },
-        {
-          title: 'Drug Safety Specialist',
-          description: 'Leads case review, narrative writing, and quality checks.',
-          salary: '8–15 LPA',
-          growth: 'Medium',
-          skills: ['literature screening', 'SAE reconciliation', 'query resolution'],
-          matchScore: 73
-        }
-      ],
-      prioritySkills: ['MedDRA Coding', 'Argus Safety', 'ICSR Processing', 'Narrative Writing', 'E2B Guidelines', 'Literature Surveillance']
-    },
-    'clinical-data-handling': {
-      name: 'Clinical Data Handling',
-      careers: [
-        {
-          title: 'Clinical Data Manager',
-          description: 'Designs data capture systems, performs cleaning and ensures data integrity.',
-          salary: '5–10 LPA',
-          growth: 'High',
-          skills: ['EDC systems', 'CDM plans', 'query management', 'CDISC standards'],
-          matchScore: 82
-        },
-        {
-          title: 'Clinical Data Analyst',
-          description: 'Analyzes trial data to support decision-making and regulatory submission.',
-          salary: '4–8 LPA',
-          growth: 'Medium',
-          skills: ['SAS', 'R', 'SQL', 'CDASH'],
-          matchScore: 75
-        },
-        {
-          title: 'Data Validation Associate',
-          description: 'Ensures collected trial data is accurate, complete, and consistent.',
-          salary: '3–6 LPA',
-          growth: 'Medium',
-          skills: ['DCF resolution', 'logic checks', 'SDV review'],
-          matchScore: 70
-        },
-        {
-          title: 'EDC Programmer',
-          description: 'Develops and manages electronic case report forms.',
-          salary: '6–12 LPA',
-          growth: 'Medium',
-          skills: ['Medidata Rave', 'eCRF design', 'UAT testing'],
-          matchScore: 68
-        }
-      ],
-      prioritySkills: ['EDC (Medidata/Rave)', 'SDTM', 'CDASH', 'Data Validation', 'Query Management', 'SAS Programming']
-    },
-    'quality-control-assurance': {
-      name: 'Quality Control & Assurance',
-      careers: [
-        {
-          title: 'Quality Assurance Executive',
-          description: 'Ensures SOP compliance and conducts internal audits.',
-          salary: '4–7 LPA',
-          growth: 'Medium',
-          skills: ['CAPA', 'deviation management', 'QMS', 'GxP'],
-          matchScore: 80
-        },
-        {
-          title: 'GCP Auditor',
-          description: 'Performs audits of trials, vendors, and systems.',
-          salary: '6–12 LPA',
-          growth: 'High',
-          skills: ['audit planning', 'SOP review', 'inspection readiness'],
-          matchScore: 77
-        },
-        {
-          title: 'Quality Control Analyst',
-          description: 'Tests materials/products and ensures laboratory compliance.',
-          salary: '3.5–6.5 LPA',
-          growth: 'Medium',
-          skills: ['analytical instruments', 'sampling', 'documentation'],
-          matchScore: 72
-        },
-        {
-          title: 'Compliance Officer – Clinical QA',
-          description: 'Manages regulatory compliance, audit response, and continuous improvement.',
-          salary: '8–14 LPA',
-          growth: 'High',
-          skills: ['audit trail', 'deviation tracking', 'compliance metrics'],
-          matchScore: 74
-        }
-      ],
-      prioritySkills: ['CAPA', 'QMS', 'Risk-Based Monitoring', 'Audit Management', 'GCP/GLP/GMP', 'SOP Development']
-    },
-    'medical-communications': {
-      name: 'Medical Communications',
-      careers: [
-        {
-          title: 'Medical Writer – Clinical',
-          description: 'Drafts CSRs, protocols, informed consent forms.',
-          salary: '5–9 LPA',
-          growth: 'High',
-          skills: ['ICH guidelines', 'regulatory writing', 'referencing tools'],
-          matchScore: 85
-        },
-        {
-          title: 'Scientific Content Developer',
-          description: 'Creates slide decks, publications, and scientific narratives.',
-          salary: '4–8 LPA',
-          growth: 'Medium',
-          skills: ['literature review', 'storytelling', 'publication guidelines'],
-          matchScore: 78
-        },
-        {
-          title: 'Publication Manager',
-          description: 'Plans and manages manuscripts and conference posters.',
-          salary: '7–14 LPA',
-          growth: 'Medium',
-          skills: ['ICMJE', 'GPP', 'journal targeting', 'author coordination'],
-          matchScore: 73
-        },
-        {
-          title: 'Regulatory Medical Writer',
-          description: 'Specializes in IBs, CTDs, and briefing documents.',
-          salary: '6–12 LPA',
-          growth: 'Medium',
-          skills: ['Module 2/3 writing', 'eCTD', 'submission standards'],
-          matchScore: 76
-        }
-      ],
-      prioritySkills: ['Medical Writing', 'Literature Analysis', 'GPP Guidelines', 'Storytelling', 'EndNote/Mendeley', 'Scientific Accuracy']
-    },
-    'regulatory-compliance': {
-      name: 'Regulatory & Compliance',
-      careers: [
-        {
-          title: 'Regulatory Affairs Associate',
-          description: 'Manages regulatory submissions and lifecycle maintenance.',
-          salary: '4–8 LPA',
-          growth: 'High',
-          skills: ['CTD', 'eCTD', 'submission tracking', 'HA communication'],
-          matchScore: 82
-        },
-        {
-          title: 'Labeling Specialist',
-          description: 'Prepares and reviews drug labeling for global markets.',
-          salary: '5–9 LPA',
-          growth: 'Medium',
-          skills: ['SPL', 'CCDS', 'labeling review', 'FDA/EMA guidelines'],
-          matchScore: 76
-        },
-        {
-          title: 'Regulatory CMC Specialist',
-          description: 'Focuses on chemistry-manufacturing-controls documentation.',
-          salary: '6–11 LPA',
-          growth: 'Medium',
-          skills: ['Module 3', 'formulation knowledge', 'change control'],
-          matchScore: 74
-        },
-        {
-          title: 'Regulatory Intelligence Analyst',
-          description: 'Tracks global regulation changes and trends.',
-          salary: '5–10 LPA',
-          growth: 'Medium',
-          skills: ['HA guidelines', 'regulatory strategy', 'competitive analysis'],
-          matchScore: 70
-        }
-      ],
-      prioritySkills: ['CTD/eCTD', 'Regulatory Submissions', 'Labeling', 'Regulatory Writing', 'HA Communication', 'Global Guidelines (FDA/EMA)']
-    }
-  };
-
-  return industryMap[industryKey] || industryMap['clinical-trials-research'];
 };
 
 export default Analysis;

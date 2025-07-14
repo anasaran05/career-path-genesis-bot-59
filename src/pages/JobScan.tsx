@@ -6,17 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Search, MapPin, Building, Clock, Briefcase, FileText, User, Radar } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const JobScan = () => {
+  const { user, userProfile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [scanProgress, setScanProgress] = useState(0);
+  const [jobs, setJobs] = useState<any[]>([]);
   const [isScanning, setIsScanning] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Note: The scanning animation is preserved for UX, but data is fetched in the background.
+  const [scanProgress, setScanProgress] = useState(0);
   const [currentPhase, setCurrentPhase] = useState('🔍 Zane AI is scanning 10,000+ listings to find your match...');
   const [showJobs, setShowJobs] = useState(false);
-  
-  const studentData = location.state?.studentData || {};
-  const careerPath = location.state?.careerPath || 'Healthcare';
 
   const scanPhases = [
     '🔍 Zane AI is scanning 10,000+ listings to find your match...',
@@ -27,6 +31,29 @@ const JobScan = () => {
   ];
 
   useEffect(() => {
+    const fetchJobs = async () => {
+      if (!user) {
+        setIsScanning(false);
+        setError("You must be logged in to scan for jobs.");
+        return;
+      }
+      
+      try {
+        const { data, error: rpcError } = await supabase
+          .rpc('fetch_job_matches', { user_id: user.id });
+
+        if (rpcError) throw rpcError;
+        
+        setJobs(data || []);
+      } catch (e: any) {
+        console.error("Error fetching job matches:", e);
+        setError("Could not fetch job matches. Please try again later.");
+      }
+    };
+
+    fetchJobs();
+
+    // This part is for the animation and can run in parallel
     let phase = 0;
     const interval = setInterval(() => {
       setScanProgress(prev => {
@@ -50,83 +77,11 @@ const JobScan = () => {
     }, 80);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
-  const jobListings = [
-    {
-      id: 1,
-      title: "Clinical Pharmacist",
-      company: "Apollo Hospitals",
-      location: "Bangalore, Karnataka",
-      type: "Full-time",
-      experience: "2-4 years",
-      salary: "₹8-12 LPA",
-      postedDate: "2 days ago",
-      match: 95,
-      companyLogo: "🏥",
-      description: "Join our clinical pharmacy team to provide pharmaceutical care and medication management for patients.",
-      requirements: [
-        "B.Pharm or PharmD degree",
-        "Clinical pharmacy experience",
-        "Knowledge of drug interactions",
-        "Patient counseling skills"
-      ]
-    },
-    {
-      id: 2,
-      title: "Regulatory Affairs Associate",
-      company: "Dr. Reddy's Laboratories",
-      location: "Hyderabad, Telangana", 
-      type: "Full-time",
-      experience: "1-3 years",
-      salary: "₹6-10 LPA",
-      match: 88,
-      companyLogo: "🧪",
-      description: "Support regulatory submissions and ensure compliance with pharmaceutical regulations.",
-      requirements: [
-        "B.Pharm/M.Pharm degree",
-        "Knowledge of regulatory guidelines", 
-        "Documentation skills",
-        "Attention to detail"
-      ]
-    },
-    {
-      id: 3,
-      title: "Medical Affairs Executive",
-      company: "Novartis India",
-      location: "Mumbai, Maharashtra",
-      type: "Full-time", 
-      experience: "3-5 years",
-      salary: "₹12-18 LPA",
-      match: 82,
-      companyLogo: "💊",
-      description: "Support medical and scientific activities for pharmaceutical products.",
-      requirements: [
-        "PharmD or M.Pharm degree",
-        "Medical writing experience",
-        "Scientific presentation skills",
-        "Clinical research knowledge"
-      ]
-    },
-    {
-      id: 4,
-      title: "Drug Safety Associate", 
-      company: "Cognizant Healthcare",
-      location: "Chennai, Tamil Nadu",
-      type: "Full-time",
-      experience: "0-2 years",
-      salary: "₹4-7 LPA", 
-      match: 75,
-      companyLogo: "🛡️",
-      description: "Monitor and assess drug safety data, process adverse event reports.",
-      requirements: [
-        "Life Sciences degree",
-        "Pharmacovigilance knowledge",
-        "Data analysis skills",
-        "Medical coding certification preferred"
-      ]
-    }
-  ];
+  const careerPath = userProfile?.preferred_industries?.[0] || 'your field';
+
+  const jobListings = jobs; // for minimal changes in the JSX
 
   if (isScanning) {
     return (
@@ -287,7 +242,7 @@ const JobScan = () => {
                       <div className="mb-4">
                         <h4 className="text-navy-900 font-semibold mb-2">Key Requirements:</h4>
                         <div className="grid md:grid-cols-2 gap-2">
-                          {job.requirements.map((req, idx) => (
+                          {job.requirements.map((req: string, idx: number) => (
                             <div key={idx} className="text-navy-600 text-sm flex items-center">
                               <div className="w-1.5 h-1.5 bg-navy-600 rounded-full mr-2 flex-shrink-0"></div>
                               {req}
@@ -300,7 +255,7 @@ const JobScan = () => {
                     <div className="flex flex-col space-y-3 lg:ml-6 lg:w-48">
                       <Button 
                         className="bg-gradient-to-r from-autumn-500 to-autumn-600 hover:from-autumn-600 hover:to-autumn-700 text-white shadow-lg"
-                        onClick={() => navigate(`/job-application/${job.id}`, { state: { job, studentData } })}
+                        onClick={() => navigate(`/job-application/${job.id}`, { state: { job, studentData: userProfile } })}
                       >
                         <User className="w-4 h-4 mr-2" />
                         Apply Now
