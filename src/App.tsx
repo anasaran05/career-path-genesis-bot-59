@@ -17,7 +17,6 @@ import CoursesPage from "./pages/CoursesPage";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
-import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +30,6 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
               <Route path="/intake" element={<Intake />} />
               <Route path="/analysis/:userId" element={<Analysis />} />
               <Route path="/job-scan" element={<JobScan />} />

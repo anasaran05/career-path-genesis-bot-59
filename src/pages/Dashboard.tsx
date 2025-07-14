@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileText, Download, Brain, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AuthModal from '@/components/AuthModal';
 
 const Dashboard = () => {
     const { user, userProfile, signOut } = useAuth();
@@ -14,6 +15,7 @@ const Dashboard = () => {
     const [usedCredits, setUsedCredits] = useState<number | null>(null);
     const [docs, setDocs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -99,9 +101,8 @@ const Dashboard = () => {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
                 <p className="mb-4 text-navy-700">Please log in to see your dashboard.</p>
-                <Link to="/auth">
-                    <Button>Log In</Button>
-                </Link>
+                <Button onClick={() => setIsAuthModalOpen(true)}>Log In</Button>
+                <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
             </div>
         );
     }
