@@ -35,27 +35,43 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [signupName, setSignupName] = useState('');
   const [resetEmail, setResetEmail] = useState('');
 
-  // Close modal if user becomes authenticated
+  // Reset form state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setLoginEmail('');
+      setLoginPassword('');
+      setSignupEmail('');
+      setSignupPassword('');
+      setSignupName('');
+      setResetEmail('');
+      setIsResetMode(false);
+      setIsLoading(false);
+    }
+  }, [isOpen]);
+
+  // Navigate immediately when user is authenticated
   useEffect(() => {
     if (user) {
       onClose();
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [user, onClose, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (isLoading) return;
     
+    setIsLoading(true);
     try {
       const { error } = await signIn(loginEmail, loginPassword);
       if (!error) {
-        // Auth state change will handle navigation
         setLoginEmail('');
         setLoginPassword('');
       }
     } finally {
-      setIsLoading(false);
+      if (!user) {
+        setIsLoading(false);
+      }
     }
   };
 

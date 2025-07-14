@@ -11,92 +11,79 @@ import AuthModal from '@/components/AuthModal';
 
 const Dashboard = () => {
     const { user, userProfile, signOut } = useAuth();
-    const [totalCredits, setTotalCredits] = useState<number | null>(null);
-    const [usedCredits, setUsedCredits] = useState<number | null>(null);
+    const [totalCredits, setTotalCredits] = useState<number>(30);
+    const [usedCredits, setUsedCredits] = useState<number>(0);
     const [docs, setDocs] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const navigate = useNavigate();
     const { toast } = useToast();
 
     useEffect(() => {
+        let mounted = true;
+
         const fetchData = async () => {
             if (!user) {
-                setLoading(false);
                 navigate('/auth');
                 return;
             }
 
-            console.log('Fetching dashboard data for user:', user.id);
-            setLoading(true);
-
             try {
-                // Fetch credits
-                const { data: creditsData, error: creditsError } = await supabase
-                    .from('user_credits')
-                    .select('total_credits, used_credits')
-                    .eq('user_id', user.id)
-                    .single();
-                
-                console.log('Credits query result:', { creditsData, creditsError });
-                
-                if (creditsError) {
-                    console.error('Error fetching credits:', creditsError);
-                    toast({
-                        title: "Error",
-                        description: "Failed to load credits. Please try refreshing the page.",
-                        variant: "destructive",
-                    });
-                } else {
-                    setTotalCredits(creditsData?.total_credits ?? 30);
-                    setUsedCredits(creditsData?.used_credits ?? 0);
-                }
+                const [creditsResponse, docsResponse] = await Promise.all([
+                    supabase
+                        .from('user_credits')
+                        .select('total_credits, used_credits')
+                        .eq('user_id', user.id)
+                        .single(),
+                    supabase
+                        .from('generated_documents')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('created_at', { ascending: false })
+                ]);
 
-                // Fetch documents
-                const { data: docs, error: docsError } = await supabase
-                    .from('generated_documents')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false });
+                if (mounted) {
+                    if (creditsResponse.error) {
+                        console.error('Error fetching credits:', creditsResponse.error);
+                        toast({
+                            title: "Error",
+                            description: "Failed to load credits. Please try refreshing the page.",
+                            variant: "destructive",
+                        });
+                    } else {
+                        setTotalCredits(creditsResponse.data?.total_credits ?? 30);
+                        setUsedCredits(creditsResponse.data?.used_credits ?? 0);
+                    }
 
-                console.log('Documents query result:', { docs, docsError });
-
-                if (docsError) {
-                    console.error('Error fetching documents:', docsError);
-                    toast({
-                        title: "Error",
-                        description: "Failed to load documents. Please try refreshing the page.",
-                        variant: "destructive",
-                    });
-                } else {
-                    setDocs(docs || []);
+                    if (docsResponse.error) {
+                        console.error('Error fetching documents:', docsResponse.error);
+                        toast({
+                            title: "Error",
+                            description: "Failed to load documents. Please try refreshing the page.",
+                            variant: "destructive",
+                        });
+                    } else {
+                        setDocs(docsResponse.data || []);
+                    }
                 }
             } catch (error) {
                 console.error('Dashboard error:', error);
-                toast({
-                    title: "Error",
-                    description: "Something went wrong. Please try refreshing the page.",
-                    variant: "destructive",
-                });
-            } finally {
-                setLoading(false);
+                if (mounted) {
+                    toast({
+                        title: "Error",
+                        description: "Something went wrong. Please try refreshing the page.",
+                        variant: "destructive",
+                    });
+                }
             }
         };
 
         fetchData();
+
+        return () => {
+            mounted = false;
+        };
     }, [user, navigate, toast]);
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-600 mx-auto mb-4"></div>
-                    <p className="text-navy-600">Loading your dashboard...</p>
-                </div>
-            </div>
-        );
-    }
-    
     if (!user) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
@@ -108,7 +95,7 @@ const Dashboard = () => {
     }
 
     const userName = userProfile?.name?.split(' ')[0] || user.email?.split('@')[0] || 'User';
-    const availableCredits = totalCredits !== null && usedCredits !== null ? totalCredits - usedCredits : null;
+    const availableCredits = totalCredits - usedCredits;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -158,7 +145,7 @@ const Dashboard = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-3xl font-bold text-navy-700">{availableCredits === null ? '-' : availableCredits}</p>
+                            <p className="text-3xl font-bold text-navy-700">{availableCredits}</p>
                             <p className="text-slate-500">Document generation credits remaining.</p>
                         </CardContent>
                     </Card>
@@ -170,7 +157,7 @@ const Dashboard = () => {
                             <Link to="/intake">
                                 <Button className="w-full" variant="outline">Update Your Profile</Button>
                             </Link>
-                             <Link to="/job-scan">
+                            <Link to="/job-scan">
                                 <Button className="w-full">Find Matching Jobs</Button>
                             </Link>
                         </CardContent>
