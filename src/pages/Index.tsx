@@ -1,15 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDown, User, Search, FileText, Sparkles, Brain, Target } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import AuthModal from '@/components/AuthModal';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const handleGetStarted = () => {
-    navigate('/signup');
+    setIsAuthModalOpen(true);
   };
 
   return (
@@ -31,7 +33,7 @@ const Index = () => {
             <a href="#process" className="text-slate-600 hover:text-navy-600 transition-colors">How it Works</a>
             <a href="#contact" className="text-slate-600 hover:text-navy-600 transition-colors">Contact</a>
             
-            <Button onClick={() => navigate('/login')} variant="ghost" className="text-navy-700 hover:bg-navy-50 rounded-xl">
+            <Button onClick={() => setIsAuthModalOpen(true)} variant="ghost" className="text-navy-700 hover:bg-navy-50 rounded-xl">
               Login
             </Button>
             <Button onClick={handleGetStarted} className="bg-gradient-to-r from-navy-600 to-autumn-500 hover:from-navy-700 hover:to-autumn-600 text-white rounded-xl">
@@ -246,6 +248,11 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </div>
   );
 };
