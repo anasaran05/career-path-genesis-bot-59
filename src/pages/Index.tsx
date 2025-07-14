@@ -9,7 +9,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/intake');
+    navigate('/signup');
   };
 
   return (
@@ -31,6 +31,9 @@ const Index = () => {
             <a href="#process" className="text-slate-600 hover:text-navy-600 transition-colors">How it Works</a>
             <a href="#contact" className="text-slate-600 hover:text-navy-600 transition-colors">Contact</a>
             
+            <Button onClick={() => navigate('/login')} variant="ghost" className="text-navy-700 hover:bg-navy-50 rounded-xl">
+              Login
+            </Button>
             <Button onClick={handleGetStarted} className="bg-gradient-to-r from-navy-600 to-autumn-500 hover:from-navy-700 hover:to-autumn-600 text-white rounded-xl">
               Get Started
             </Button>

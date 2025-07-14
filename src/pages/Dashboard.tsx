@@ -22,14 +22,14 @@ const Dashboard = () => {
             setLoading(true);
 
             try {
-                const { data: profile, error: profileError } = await supabase
-                    .from('user_profiles')
+                const { data: creditsData, error: creditsError } = await supabase
+                    .from('user_credits')
                     .select('credits')
-                    .eq('id', user.id)
+                    .eq('user_id', user.id)
                     .single();
                 
-                if (profileError) throw profileError;
-                setCredits(profile.credits);
+                if (creditsError) throw creditsError;
+                setCredits(creditsData?.credits ?? 0);
 
                 const { data: docs, error: docsError } = await supabase
                     .from('generated_documents')
