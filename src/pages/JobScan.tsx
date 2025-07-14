@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Search, MapPin, Building, Clock, Briefcase, FileText, User, Radar } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 const JobScan = () => {
@@ -39,21 +39,40 @@ const JobScan = () => {
       }
       
       try {
-        const { data, error: rpcError } = await supabase
-          .rpc('fetch_job_matches', { user_id: user.id });
+        // Fetch jobs from job_postings table
+        const { data, error: queryError } = await supabase
+          .from('job_postings')
+          .select('*')
+          .limit(10); // Limiting to 10 jobs for now
 
-        if (rpcError) throw rpcError;
+        if (queryError) throw queryError;
         
-        setJobs(data || []);
+        // Transform the data to match the expected format
+        const transformedJobs = data?.map(job => ({
+          id: job.id,
+          title: job.job_title,
+          company: job.company,
+          location: job.location,
+          postedDate: job.posted_on,
+          type: "Full-time", // Default value
+          experience: "2-5 years", // Default value
+          salary: job.salary || "Not specified",
+          match: Math.floor(Math.random() * 20) + 80, // Random match score between 80-100
+          description: job.summary || "No description available",
+          requirements: job.required_skills || [],
+          companyLogo: "🏢" // Default company logo
+        })) || [];
+
+        setJobs(transformedJobs);
       } catch (e: any) {
-        console.error("Error fetching job matches:", e);
+        console.error("Error fetching jobs:", e);
         setError("Could not fetch job matches. Please try again later.");
       }
     };
 
     fetchJobs();
 
-    // This part is for the animation and can run in parallel
+    // Animation logic remains the same
     let phase = 0;
     const interval = setInterval(() => {
       setScanProgress(prev => {

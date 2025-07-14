@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, User, BookOpen, Award, Target, Brain, ChevronRight, Plus, Trash2, ExternalLink, Check, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Intake = () => {
@@ -91,23 +91,17 @@ const Intake = () => {
       }
       const { data, error } = await supabase
        .from('user_profiles')
-       .upsert({
+       .upsert([{
          id: user.id,
          email: formData.email,
          name: formData.fullName,
-         education: formData.education,
+         education: JSON.stringify(formData.education),
          skills: [...formData.technicalSkills, ...formData.softSkills].filter(Boolean),
-         experience: formData.experience,
+         experience: JSON.stringify(formData.experience),
          preferred_industries: [formData.preferredIndustry].filter(Boolean),
          preferred_locations: formData.jobLocations.split(',').map(s => s.trim()).filter(Boolean),
-         certifications: formData.certifications,
-         phone: formData.phone,
-         location: formData.location,
-         projects: formData.projects,
-         career_goals: formData.careerGoals,
-         salary_expectation: formData.salaryExpectation,
-         work_style: formData.workStyle
-       })
+         certifications: formData.certifications
+       }])
        .select('id')
        .single()
 

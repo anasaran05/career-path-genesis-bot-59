@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { 
   ArrowLeft, Brain, TrendingUp, Users, Briefcase, Star, CheckCircle, Loader2 
 } from "lucide-react";
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 const Analysis = () => {
   const { userId } = useParams<{ userId: string }>();
