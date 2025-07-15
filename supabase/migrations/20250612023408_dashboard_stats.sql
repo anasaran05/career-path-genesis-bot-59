@@ -42,14 +42,20 @@ begin
 
   -- Calculate profile completeness
   select * into user_profile from public.user_profiles where id = auth_user_id;
-  if user_profile.name is not null then profile_fields_completed := profile_fields_completed + 1; end if;
-  if user_profile.education is not null then profile_fields_completed := profile_fields_completed + 1; end if;
-  if user_profile.skills is not null and array_length(user_profile.skills, 1) > 0 then profile_fields_completed := profile_fields_completed + 1; end if;
-  if user_profile.experience is not null then profile_fields_completed := profile_fields_completed + 1; end if;
-  if user_profile.preferred_industries is not null and array_length(user_profile.preferred_industries, 1) > 0 then profile_fields_completed := profile_fields_completed + 1; end if;
 
-  profile_completeness := (profile_fields_completed::float / total_profile_fields::float) * 100;
+  if found then
+    if user_profile.name is not null then profile_fields_completed := profile_fields_completed + 1; end if;
+    if user_profile.education is not null then profile_fields_completed := profile_fields_completed + 1; end if;
+    if user_profile.skills is not null and array_length(user_profile.skills, 1) > 0 then profile_fields_completed := profile_fields_completed + 1; end if;
+    if user_profile.experience is not null then profile_fields_completed := profile_fields_completed + 1; end if;
+    if user_profile.preferred_industries is not null and array_length(user_profile.preferred_industries, 1) > 0 then profile_fields_completed := profile_fields_completed + 1; end if;
+  end if;
 
+  if total_profile_fields > 0 then
+    profile_completeness := (profile_fields_completed::float / total_profile_fields::float) * 100;
+  else
+    profile_completeness := 0;
+  end if;
 
   return query
   select

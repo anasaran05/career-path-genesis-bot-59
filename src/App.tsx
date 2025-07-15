@@ -20,6 +20,9 @@ import CoursesPage from "./pages/CoursesPage";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
+import Account from "./pages/Account";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +84,21 @@ const App = () => (
                 <Route path="/recruiter-dashboard" element={
                   <ProtectedRoute>
                     <RecruiterDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/account" element={
+                  <ProtectedRoute>
+                    <Account />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                } />
+                <Route path="/help" element={
+                  <ProtectedRoute>
+                    <Help />
                   </ProtectedRoute>
                 } />
                 
