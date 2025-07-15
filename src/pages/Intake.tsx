@@ -89,6 +89,17 @@ const Intake = () => {
         // Handle not logged in case, maybe redirect to login
         return;
       }
+
+      console.log('Submitting form with data:', formData);
+      console.log('Selected industry:', formData.preferredIndustry);
+
+      if (!formData.preferredIndustry) {
+        console.error("Preferred industry is not selected.");
+        // Optionally, show a toast notification to the user
+        // toast({ title: "Error", description: "Please select an industry.", variant: "destructive" });
+        return;
+      }
+
       const { data, error } = await supabase
        .from('user_profiles')
        .upsert([{
@@ -111,6 +122,7 @@ const Intake = () => {
      }
      
      if (data) {
+        console.log('Profile upserted successfully. Navigating to analysis page.');
         navigate(`/analysis/${formData.preferredIndustry}`)
      }
     }
