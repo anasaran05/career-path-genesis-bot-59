@@ -34,8 +34,8 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <OnboardingModal />
             <BrowserRouter>
+              <OnboardingModal />
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<Index />} />
