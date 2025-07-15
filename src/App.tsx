@@ -39,7 +39,7 @@ const App = () => (
                   <Intake />
                 </ProtectedRoute>
               } />
-              <Route path="/analysis/:userId" element={
+              <Route path="/analysis/:industry" element={
                 <ProtectedRoute>
                   <Analysis />
                 </ProtectedRoute>

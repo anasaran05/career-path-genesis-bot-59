@@ -111,7 +111,7 @@ const Intake = () => {
      }
      
      if (data) {
-        navigate(`/analysis/${data.id}`)
+        navigate(`/analysis/${formData.preferredIndustry}`)
      }
     }
   };
