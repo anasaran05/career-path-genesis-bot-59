@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CreditUsageModal from "./CreditUsageModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 
 const Header = ({ credits, onThemeToggle }) => {
   const { signOut, userProfile } = useAuth();
+  const { hasProfile } = useOnboarding();
   const navigate = useNavigate();
   const [isCreditModalOpen, setCreditModalOpen] = useState(false);
   
@@ -27,11 +29,16 @@ const Header = ({ credits, onThemeToggle }) => {
       <header className="bg-background border-b sticky top-0 z-40">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-4">
               <Link to="/" className="flex items-center space-x-2">
                 <Brain className="w-8 h-8 text-primary" />
                 <span className="text-xl font-bold">ZANE AI</span>
               </Link>
+              {hasProfile && (
+                <Button variant="link" onClick={() => navigate('/intake')}>
+                  Update Profile
+                </Button>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="ghost" className="text-sm font-semibold" onClick={() => setCreditModalOpen(true)}>

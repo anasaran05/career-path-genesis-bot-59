@@ -10,10 +10,12 @@ import { ArrowLeft, User, BookOpen, Award, Target, Brain, ChevronRight, Plus, Tr
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 const Intake = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { startAnalysis, checkUserProfile } = useOnboarding();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -122,8 +124,9 @@ const Intake = () => {
      }
      
      if (data) {
-        console.log('Profile upserted successfully. Navigating to analysis page.');
-        navigate(`/analysis/${formData.preferredIndustry}`)
+        await checkUserProfile(); // Re-check profile status
+        startAnalysis(); // Start the modal flow
+        navigate('/dashboard'); // Navigate to dashboard where modal will show
      }
     }
   };

@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import OnboardingModal from "@/components/OnboardingModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -25,66 +27,69 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Index />} />
-              
-              {/* Protected routes */}
-              <Route path="/intake" element={
-                <ProtectedRoute>
-                  <Intake />
-                </ProtectedRoute>
-              } />
-              <Route path="/analysis/:industry" element={
-                <ProtectedRoute>
-                  <Analysis />
-                </ProtectedRoute>
-              } />
-              <Route path="/job-scan" element={
-                <ProtectedRoute>
-                  <JobScan />
-                </ProtectedRoute>
-              } />
-              <Route path="/job-application/:jobId" element={
-                <ProtectedRoute>
-                  <JobApplication />
-                </ProtectedRoute>
-              } />
-              <Route path="/job-details/:jobId" element={
-                <ProtectedRoute>
-                  <JobDetails />
-                </ProtectedRoute>
-              } />
-              <Route path="/advisory-report" element={
-                <ProtectedRoute>
-                  <AdvisoryReport />
-                </ProtectedRoute>
-              } />
-              <Route path="/courses" element={
-                <ProtectedRoute>
-                  <CoursesPage />
-                </ProtectedRoute>
-              } />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/recruiter-dashboard" element={
-                <ProtectedRoute>
-                  <RecruiterDashboard />
-                </ProtectedRoute>
-              } />
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <OnboardingProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <OnboardingModal />
+            <BrowserRouter>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<Index />} />
+                
+                {/* Protected routes */}
+                <Route path="/intake" element={
+                  <ProtectedRoute>
+                    <Intake />
+                  </ProtectedRoute>
+                } />
+                <Route path="/analysis/:industry" element={
+                  <ProtectedRoute>
+                    <Analysis />
+                  </ProtectedRoute>
+                } />
+                <Route path="/job-scan" element={
+                  <ProtectedRoute>
+                    <JobScan />
+                  </ProtectedRoute>
+                } />
+                <Route path="/job-application/:jobId" element={
+                  <ProtectedRoute>
+                    <JobApplication />
+                  </ProtectedRoute>
+                } />
+                <Route path="/job-details/:jobId" element={
+                  <ProtectedRoute>
+                    <JobDetails />
+                  </ProtectedRoute>
+                } />
+                <Route path="/advisory-report" element={
+                  <ProtectedRoute>
+                    <AdvisoryReport />
+                  </ProtectedRoute>
+                } />
+                <Route path="/courses" element={
+                  <ProtectedRoute>
+                    <CoursesPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/recruiter-dashboard" element={
+                  <ProtectedRoute>
+                    <RecruiterDashboard />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </OnboardingProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
