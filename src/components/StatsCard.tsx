@@ -13,6 +13,13 @@ interface DashboardStats {
   totalReportsGenerated: number;
 }
 
+interface DashboardStatsResponse {
+  profile_completeness: number;
+  tasks_completed_percentage: number;
+  total_documents_generated: number;
+  total_reports_generated: number;
+}
+
 const StatsCard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -26,16 +33,20 @@ const StatsCard = () => {
       }
       try {
         setIsLoading(true);
-        // Use a direct query approach instead of RPC to avoid TypeScript issues
-        const { data, error } = await supabase
-          .rpc('get_dashboard_stats' as any) as { data: any, error: any };
+        console.log("Fetching dashboard stats for user:", user.id);
+        
+        // Cast the RPC call to bypass TypeScript issues
+        const { data, error } = await (supabase as any).rpc('get_dashboard_stats');
+
+        console.log("Dashboard stats response:", { data, error });
 
         if (error) {
+          console.error("Error from RPC:", error);
           throw error;
         }
         
-        if (data && data.length > 0) {
-          const statsData = data[0];
+        if (data && Array.isArray(data) && data.length > 0) {
+          const statsData = data[0] as DashboardStatsResponse;
           setStats({
             profileCompleteness: statsData.profile_completeness || 0,
             tasksCompletedPercentage: statsData.tasks_completed_percentage || 0,
@@ -43,6 +54,7 @@ const StatsCard = () => {
             totalReportsGenerated: statsData.total_reports_generated || 0,
           });
         } else {
+          console.log("No data returned, setting default stats");
           setStats({
             profileCompleteness: 0,
             tasksCompletedPercentage: 0,
