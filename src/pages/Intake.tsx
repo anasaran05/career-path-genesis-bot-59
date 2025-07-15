@@ -88,46 +88,50 @@ const Intake = () => {
     } else {
       if (!user) {
         console.error("User not logged in");
-        // Handle not logged in case, maybe redirect to login
         return;
       }
-
-      console.log('Submitting form with data:', formData);
-      console.log('Selected industry:', formData.preferredIndustry);
 
       if (!formData.preferredIndustry) {
         console.error("Preferred industry is not selected.");
-        // Optionally, show a toast notification to the user
-        // toast({ title: "Error", description: "Please select an industry.", variant: "destructive" });
         return;
       }
+      
+      try {
+        const { error } = await supabase
+         .from('user_profiles')
+         .upsert({
+           id: user.id,
+           email: formData.email,
+           full_name: formData.fullName,
+           phone: formData.phone,
+           location: formData.location,
+           education: formData.education,
+           technical_skills: formData.technicalSkills.filter(Boolean),
+           soft_skills: formData.softSkills.filter(Boolean),
+           certifications: formData.certifications,
+           projects: formData.projects,
+           experience: formData.experience,
+           preferred_industry: formData.preferredIndustry,
+           career_goals: formData.careerGoals,
+           job_locations: formData.jobLocations.split(',').map(s => s.trim()).filter(Boolean),
+           salary_expectation: formData.salaryExpectation,
+           work_style: formData.workStyle,
+           has_completed_onboarding: true,
+         }, {
+           onConflict: 'id'
+         });
 
-      const { data, error } = await supabase
-       .from('user_profiles')
-       .upsert([{
-         id: user.id,
-         email: formData.email,
-         name: formData.fullName,
-         education: JSON.stringify(formData.education),
-         skills: [...formData.technicalSkills, ...formData.softSkills].filter(Boolean),
-         experience: JSON.stringify(formData.experience),
-         preferred_industries: [formData.preferredIndustry].filter(Boolean),
-         preferred_locations: formData.jobLocations.split(',').map(s => s.trim()).filter(Boolean),
-         certifications: formData.certifications
-       }])
-       .select('id')
-       .single()
+       if (error) {
+         console.error("Error upserting profile:", error);
+         throw error;
+       }
+       
+       const industrySlug = formData.preferredIndustry.toLowerCase().replace(/\s+/g, '-');
+       navigate(`/analysis/${industrySlug}`);
 
-     if (error) {
-       console.error("Error upserting profile:", error)
-       throw error
-     }
-     
-     if (data) {
-        await checkUserProfile(); // Re-check profile status
-        startAnalysis(); // Start the modal flow
-        navigate('/dashboard'); // Navigate to dashboard where modal will show
-     }
+      } catch (e) {
+        console.error("Submission failed", e);
+      }
     }
   };
 

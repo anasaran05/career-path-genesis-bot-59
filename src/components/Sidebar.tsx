@@ -5,11 +5,10 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Home" },
   { href: "/job-scan", icon: ScanSearch, label: "Job Scan" },
-  { href: "/profile", icon: User, label: "Profile" },
   { href: "/advisory-report", icon: FileText, label: "Advisory Report Analysis" },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ onProfileClick }) => {
   const location = useLocation();
 
   return (
@@ -30,9 +29,21 @@ const Sidebar = () => {
             <span>{item.label}</span>
           </Link>
         ))}
+        <button
+          onClick={onProfileClick}
+          className={cn(
+            "flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium w-full text-left",
+            location.pathname === "/profile"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          <User className="h-5 w-5" />
+          <span>Profile</span>
+        </button>
       </nav>
     </aside>
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

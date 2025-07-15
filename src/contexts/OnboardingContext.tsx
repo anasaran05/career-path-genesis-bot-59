@@ -3,9 +3,27 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-const OnboardingContext = createContext(null);
+interface OnboardingContextType {
+  showOnboarding: boolean;
+  onboardingStep: string;
+  hasProfile: boolean;
+  startAnalysis: () => void;
+  nextStep: () => void;
+  closeModal: () => void;
+  checkUserProfile: () => Promise<void>;
+}
 
-export const OnboardingProvider = ({ children }) => {
+const OnboardingContext = createContext<OnboardingContextType>({ 
+  showOnboarding: false,
+  onboardingStep: 'profile',
+  hasProfile: true,
+  startAnalysis: () => {},
+  nextStep: () => {},
+  closeModal: () => {},
+  checkUserProfile: async () => {}
+});
+
+export const OnboardingProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState('profile');

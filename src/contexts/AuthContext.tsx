@@ -9,9 +9,12 @@ interface AuthContextType {
   session: Session | null;
   userProfile: any | null;
   loading: boolean;
+  showOnboarding: boolean;
   signUp: (email: string, password: string, userData: any) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  updateProfile: (profileData: any) => Promise<{ error: any }>;
+  completeOnboarding: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,8 +23,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userProfile, setUserProfile] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
   const { toast } = useToast();
+
+  const updateProfile = async (profileData: any) => {
+    if (!user) {
+      return { error: 'No user logged in' };
+    }
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .update(profileData)
+        .eq('id', user.id);
+      if (error) {
+        toast({
+          title: 'Update Failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return { error };
+      }
+      // Refresh profile
+      const updatedProfile = await fetchUserProfile(user.id);
+      setUserProfile(updatedProfile);
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been updated successfully.',
+        variant: 'default',
+      });
+      return { error: null };
+    } catch (err: any) {
+      toast({
+        title: 'Update Failed',
+        description: err.message || 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+      return { error: err };
+    }
+  };
+
+  // existing code continues...
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -48,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
+        setLoading(true);
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) throw error;
@@ -62,10 +105,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUserProfile(profile);
             }
           }
-          setLoading(false);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+      } finally {
         if (mounted) {
           setLoading(false);
         }
@@ -96,6 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
 
   const signUp = async (email: string, password: string, userData: any = {}) => {
     try {
@@ -171,8 +215,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
       });
       
-      console.log('Signin response:', { error });
-      
       if (error) {
         console.error('Signin error:', error);
         toast({
@@ -181,6 +223,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           variant: "destructive",
         });
       } else {
+        // Check if user needs onboarding
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('has_completed_onboarding')
+          .eq('id', user?.id)
+          .single();
+        
+        if (profile && !profile.has_completed_onboarding) {
+          setShowOnboarding(true);
+        }
+        
         toast({
           title: "Welcome back!",
           description: "Successfully signed in.",
@@ -197,6 +250,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
       return { error };
+    }
+  };
+
+  const completeOnboarding = async () => {
+    if (!user) return;
+    
+    try {
+      await supabase
+        .from('user_profiles')
+        .update({ has_completed_onboarding: true })
+        .eq('id', user.id);
+      
+      setShowOnboarding(false);
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
     }
   };
 
@@ -228,9 +296,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session,
       userProfile,
       loading,
+      showOnboarding,
       signUp,
       signIn,
       signOut,
+      updateProfile,
+      completeOnboarding
     }}>
       {children}
     </AuthContext.Provider>
