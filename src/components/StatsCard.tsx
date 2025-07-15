@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -5,9 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
+interface DashboardStats {
+  profileCompleteness: number;
+  tasksCompletedPercentage: number;
+  totalDocumentsGenerated: number;
+  totalReportsGenerated: number;
+}
+
 const StatsCard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -18,18 +26,33 @@ const StatsCard = () => {
       }
       try {
         setIsLoading(true);
-        const { data, error } = await supabase.rpc("get_dashboard_stats");
+        // Use a direct query approach instead of RPC to avoid TypeScript issues
+        const { data, error } = await supabase
+          .rpc('get_dashboard_stats' as any) as { data: any, error: any };
 
         if (error) {
           throw error;
         }
         
         if (data && data.length > 0) {
-          setStats(data[0]);
+          const statsData = data[0];
+          setStats({
+            profileCompleteness: statsData.profile_completeness || 0,
+            tasksCompletedPercentage: statsData.tasks_completed_percentage || 0,
+            totalDocumentsGenerated: statsData.total_documents_generated || 0,
+            totalReportsGenerated: statsData.total_reports_generated || 0,
+          });
+        } else {
+          setStats({
+            profileCompleteness: 0,
+            tasksCompletedPercentage: 0,
+            totalDocumentsGenerated: 0,
+            totalReportsGenerated: 0,
+          });
         }
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
-        setStats({ // Set default/error state
+        setStats({
           profileCompleteness: 0,
           tasksCompletedPercentage: 0,
           totalDocumentsGenerated: 0,
@@ -110,4 +133,4 @@ const StatsCard = () => {
   );
 };
 
-export default StatsCard; 
+export default StatsCard;
