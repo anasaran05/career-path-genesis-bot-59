@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import ReportCard from "@/components/ReportCard";
@@ -10,19 +11,38 @@ import DocumentCard from "@/components/DocumentCard";
 import StatsCard from "@/components/StatsCard";
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
+  const [credits, setCredits] = useState(null);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const handleThemeToggle = () => {
     setTheme(theme === "light" ? "dark" : "light");
-    document.documentElement.classList.toggle("dark");
   };
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
-  };
+  
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("user_credits")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching credits", error);
+      } else {
+        setCredits(data);
+      }
+    };
+    
+    fetchCredits();
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -34,7 +54,7 @@ const Dashboard = () => {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header credits={30} onThemeToggle={handleThemeToggle} onSignOut={handleSignOut} />
+        <Header credits={credits} onThemeToggle={handleThemeToggle} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-muted/40 p-4 sm:p-6 lg:p-8">
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
             <ReportCard />
