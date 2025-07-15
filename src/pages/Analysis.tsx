@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -7,13 +6,15 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, Brain, TrendingUp, Users, Briefcase, Star, CheckCircle, 
-  Loader2, GraduationCap, DollarSign, TrendingDown 
+  Loader2, GraduationCap, DollarSign, TrendingDown, FileText 
 } from "lucide-react";
 import { useCareerPaths, CareerPath } from '@/hooks/use-career-paths';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 const Analysis = () => {
   const { industry } = useParams<{ industry: string }>();
   const { data, isLoading, error } = useCareerPaths(industry);
+  const { startAnalysis } = useOnboarding();
 
   if (isLoading) {
     return (
@@ -110,6 +111,20 @@ const Analysis = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 mb-8">
+            <Button onClick={() => startAnalysis()} className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Get Advisory Report
+            </Button>
+            <Link to="/job-scan">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4" />
+                Start Job Scan
+              </Button>
+            </Link>
+          </div>
 
           {/* Other Career Paths */}
           <div className="space-y-6">

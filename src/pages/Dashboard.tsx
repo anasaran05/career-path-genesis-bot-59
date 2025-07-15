@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -12,6 +13,7 @@ import StatsCard from "@/components/StatsCard";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
+  const { showOnboarding } = useOnboarding();
   const navigate = useNavigate();
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const [credits, setCredits] = useState(null);
@@ -66,7 +68,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className={`flex h-screen bg-background ${showOnboarding ? 'opacity-50' : ''}`}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header credits={credits} onThemeToggle={handleThemeToggle} />

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '@/contexts/OnboardingContext';
@@ -53,12 +54,12 @@ const OnboardingModal = () => {
   const handleDeductCredits = async () => {
     setIsLoading(true);
     try {
-        await supabase.functions.invoke('deduct-credits', { body: { userId: user.id } });
-        nextStep();
+      await supabase.functions.invoke('deduct-credits', { body: { userId: user.id } });
+      nextStep();
     } catch(e) {
-        setError('Failed to deduct credits.');
+      setError('Failed to deduct credits.');
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }
 
@@ -100,45 +101,45 @@ const OnboardingModal = () => {
               </div>
             )}
             <DialogFooter>
-                <Button onClick={handleDeductCredits}>Finalize Analysis (-10 Credits)</Button>
+              <Button onClick={handleDeductCredits}>Finalize Analysis (-10 Credits)</Button>
             </DialogFooter>
           </>
         );
       case 'advisory':
         return (
-            <>
-                <DialogHeader>
-                    <DialogTitle>Advisory Report</DialogTitle>
-                </DialogHeader>
-                {advisoryData && (
-                    <div>
-                        <h4 className="font-semibold">Skill Gaps</h4>
-                        <ul className="list-disc list-inside">{advisoryData.skillGaps.map(skill => <li key={skill}>{skill}</li>)}</ul>
-                        <h4 className="font-semibold mt-4">Upskilling Roadmap</h4>
-                        <ul className="list-decimal list-inside">{advisoryData.roadmap.map(task => <li key={task}>{task}</li>)}</ul>
-                    </div>
-                )}
-                <DialogFooter>
-                    <Button onClick={nextStep}>Continue to Job Scan</Button>
-                </DialogFooter>
-            </>
+          <>
+            <DialogHeader>
+              <DialogTitle>Advisory Report</DialogTitle>
+            </DialogHeader>
+            {advisoryData && (
+              <div>
+                <h4 className="font-semibold">Skill Gaps</h4>
+                <ul className="list-disc list-inside">{advisoryData.skillGaps.map(skill => <li key={skill}>{skill}</li>)}</ul>
+                <h4 className="font-semibold mt-4">Upskilling Roadmap</h4>
+                <ul className="list-decimal list-inside">{advisoryData.roadmap.map(task => <li key={task}>{task}</li>)}</ul>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={nextStep}>Continue to Job Scan</Button>
+            </DialogFooter>
+          </>
         );
       case 'jobScan':
         return (
-            <>
-                <DialogHeader>
-                    <DialogTitle>Ready for Job Scan?</DialogTitle>
-                </DialogHeader>
-                <div className="flex items-center space-x-2">
-                    <AlertTriangle className="text-amber-500" />
-                    <p>Before you proceed, ensure your profile is updated with certifications and projects for the best results.</p>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={closeModal}>I'll do it later</Button>
-                    <Button onClick={() => navigate('/job-scan')}>Proceed to Job Scan</Button>
-                </DialogFooter>
-            </>
-        )
+          <>
+            <DialogHeader>
+              <DialogTitle>Ready for Job Scan?</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="text-amber-500" />
+              <p>Before you proceed, ensure your profile is updated with certifications and projects for the best results.</p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={closeModal}>I'll do it later</Button>
+              <Button onClick={() => navigate('/job-scan')}>Proceed to Job Scan</Button>
+            </DialogFooter>
+          </>
+        );
       default:
         return null;
     }
@@ -151,4 +152,4 @@ const OnboardingModal = () => {
   );
 };
 
-export default OnboardingModal; 
+export default OnboardingModal;

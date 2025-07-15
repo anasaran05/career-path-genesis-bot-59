@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,4 +74,4 @@ export const useOnboarding = () => {
     throw new Error('useOnboarding must be used within an OnboardingProvider');
   }
   return context;
-}; 
+};

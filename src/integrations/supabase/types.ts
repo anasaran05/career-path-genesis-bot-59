@@ -350,45 +350,96 @@ export type Database = {
           },
         ]
       }
+      user_onboarding_status: {
+        Row: {
+          has_completed_advisory: boolean | null
+          has_completed_analysis: boolean | null
+          has_completed_intake: boolean | null
+          id: string
+          last_updated: string | null
+          user_id: string
+        }
+        Insert: {
+          has_completed_advisory?: boolean | null
+          has_completed_analysis?: boolean | null
+          has_completed_intake?: boolean | null
+          id?: string
+          last_updated?: string | null
+          user_id: string
+        }
+        Update: {
+          has_completed_advisory?: boolean | null
+          has_completed_analysis?: boolean | null
+          has_completed_intake?: boolean | null
+          id?: string
+          last_updated?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
+          career_goals: string | null
           certifications: Json | null
           created_at: string
           credits: number
           education: string | null
           email: string
           experience: string | null
+          graduation_status: string | null
           id: string
+          location: string | null
           name: string
+          phone: string | null
           preferred_industries: string[] | null
           preferred_locations: string[] | null
+          projects: Json | null
+          salary_expectation: string | null
           skills: string[] | null
+          updated_at: string | null
+          work_style: string | null
         }
         Insert: {
+          career_goals?: string | null
           certifications?: Json | null
           created_at?: string
           credits?: number
           education?: string | null
           email: string
           experience?: string | null
+          graduation_status?: string | null
           id?: string
+          location?: string | null
           name: string
+          phone?: string | null
           preferred_industries?: string[] | null
           preferred_locations?: string[] | null
+          projects?: Json | null
+          salary_expectation?: string | null
           skills?: string[] | null
+          updated_at?: string | null
+          work_style?: string | null
         }
         Update: {
+          career_goals?: string | null
           certifications?: Json | null
           created_at?: string
           credits?: number
           education?: string | null
           email?: string
           experience?: string | null
+          graduation_status?: string | null
           id?: string
+          location?: string | null
           name?: string
+          phone?: string | null
           preferred_industries?: string[] | null
           preferred_locations?: string[] | null
+          projects?: Json | null
+          salary_expectation?: string | null
           skills?: string[] | null
+          updated_at?: string | null
+          work_style?: string | null
         }
         Relationships: []
       }
@@ -397,7 +448,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      deduct_user_credits: {
+        Args: { p_user_id: string; p_amount: number }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
