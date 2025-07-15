@@ -11,7 +11,7 @@ import DocumentCard from "@/components/DocumentCard";
 import StatsCard from "@/components/StatsCard";
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const [credits, setCredits] = useState(null);
@@ -45,10 +45,25 @@ const Dashboard = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       navigate("/");
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-600 mx-auto mb-4"></div>
+          <p className="text-navy-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-background">

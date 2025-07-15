@@ -49,6 +49,42 @@ export type Database = {
           },
         ]
       }
+      career_insights: {
+        Row: {
+          created_at: string | null
+          growth_prospects: string | null
+          id: string
+          industry_key: string
+          job_description: string | null
+          job_title: string
+          required_skills: string[] | null
+          salary_range: string | null
+          upgraded_skills: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          growth_prospects?: string | null
+          id?: string
+          industry_key: string
+          job_description?: string | null
+          job_title: string
+          required_skills?: string[] | null
+          salary_range?: string | null
+          upgraded_skills?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          growth_prospects?: string | null
+          id?: string
+          industry_key?: string
+          job_description?: string | null
+          job_title?: string
+          required_skills?: string[] | null
+          salary_range?: string | null
+          upgraded_skills?: string[] | null
+        }
+        Relationships: []
+      }
       career_paths: {
         Row: {
           career_track: string
