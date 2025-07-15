@@ -17,6 +17,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
   const [credits, setCredits] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -30,21 +31,29 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchCredits = async () => {
       if (!user) return;
-      const { data, error } = await supabase
-        .from("user_credits")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
       
-      if (error) {
-        console.error("Error fetching credits", error);
-      } else {
-        setCredits(data);
+      try {
+        const { data, error } = await supabase
+          .from("user_credits")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (error) {
+          console.error("Error fetching credits", error);
+        } else {
+          setCredits(data);
+        }
+      } catch (err) {
+        console.error("Credits fetch error:", err);
       }
     };
     
-    fetchCredits();
-  }, [user]);
+    if (user && !loading) {
+      fetchCredits();
+      setIsInitialized(true);
+    }
+  }, [user, loading]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -52,6 +61,7 @@ const Dashboard = () => {
     }
   }, [user, loading, navigate]);
 
+  // Show loading only when auth is loading, not when we're fetching other data
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
